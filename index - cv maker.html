@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CV Maker — Générateur de CV</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f0f0ec;--white:#fff;--dark:#111;--mid:#888;--light:#d8d8d0;--accent:#3d3dff;--accent-l:#ebebff}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--dark);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 16px 60px}
+.langbar{width:100%;max-width:480px;display:flex;justify-content:flex-end;gap:8px;padding:16px 0 8px}
+.langbtn{background:none;border:1.5px solid var(--light);border-radius:20px;padding:4px 14px;font-family:inherit;font-size:12px;font-weight:600;color:var(--mid);cursor:pointer;transition:.2s}
+.langbtn.active{background:var(--dark);border-color:var(--dark);color:#fff}
+.header{width:100%;max-width:480px;padding:24px 0 18px}
+.hlabel{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mid);margin-bottom:8px}
+.header h1{font-family:'DM Serif Display',Georgia,serif;font-size:34px;line-height:1.1;color:var(--dark);font-weight:400}
+.progwrap{width:100%;max-width:480px;margin-bottom:20px}
+.proginfo{display:flex;justify-content:space-between;font-size:12px;color:var(--mid);margin-bottom:7px;font-weight:500}
+.progbar{height:4px;background:var(--light);border-radius:4px;overflow:hidden}
+.progfill{height:100%;background:var(--accent);border-radius:4px;transition:width .4s}
+.card{width:100%;max-width:480px;background:var(--white);border-radius:16px;box-shadow:0 2px 18px rgba(0,0,0,.07);overflow:hidden}
+.chead{padding:24px 24px 0}
+.icon{width:42px;height:42px;background:var(--accent-l);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;margin-bottom:14px}
+.chead h2{font-family:'DM Serif Display',Georgia,serif;font-size:21px;font-weight:400;color:var(--dark);margin-bottom:4px}
+.chead p{font-size:13px;color:var(--mid);line-height:1.5}
+.body{padding:18px 24px 22px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--mid);margin-bottom:7px}
+.field input,.field textarea,.field select{width:100%;padding:12px 14px;border:1.5px solid var(--light);border-radius:10px;font-family:inherit;font-size:15px;color:var(--dark);background:#fff;outline:none;transition:.2s;appearance:none;-webkit-appearance:none}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(61,61,255,.08)}
+.field textarea{min-height:90px;line-height:1.6;resize:vertical}
+.field .err-input{border-color:#e53e3e}
+.err{color:#e53e3e;font-size:13px;font-weight:600;margin-top:5px;padding:4px 8px;background:#fff0f0;border-radius:6px;border-left:3px solid #e53e3e}
+.charcount{font-size:11px;color:#ccc;text-align:right;margin-top:3px}
+.photobox{border:2px dashed var(--light);border-radius:12px;padding:22px;text-align:center;cursor:pointer;transition:.2s}
+.photobox:hover{border-color:var(--accent);background:var(--accent-l)}
+.photobox input{display:none}
+.photoimg{width:80px;height:80px;border-radius:50%;object-fit:cover;margin:0 auto 8px;display:block;border:3px solid var(--accent-l)}
+.li{background:#fafaf8;border:1.5px solid var(--light);border-radius:10px;padding:14px;margin-bottom:10px;position:relative}
+.li .rm{position:absolute;top:10px;right:10px;background:none;border:none;font-size:17px;color:#bbb;cursor:pointer;line-height:1}
+.add{width:100%;padding:12px;border:1.5px dashed var(--light);border-radius:10px;background:none;font-family:inherit;font-size:14px;color:var(--accent);font-weight:600;cursor:pointer;margin-top:4px}
+.add:hover{background:var(--accent-l);border-color:var(--accent)}
+.daterow{display:flex;gap:6px;align-items:center}
+.datecol{display:flex;flex-direction:column}
+.datecol .fac{font-size:9px;color:#bbb;margin-bottom:2px;text-align:center;font-style:italic}
+.pill{padding:5px 13px;border-radius:20px;border:1.5px solid var(--light);font-size:12px;font-weight:500;color:var(--mid);cursor:pointer;transition:.2s;user-select:none}
+.pill.sel{background:var(--dark);border-color:var(--dark);color:#fff}
+.nav{display:flex;gap:10px;padding:0 24px 24px}
+.bback{flex:1;padding:14px;border:1.5px solid var(--light);border-radius:10px;background:none;font-family:inherit;font-size:15px;font-weight:600;color:var(--dark);cursor:pointer}
+.bnext{flex:2;padding:14px;border:none;border-radius:10px;background:var(--dark);font-family:inherit;font-size:15px;font-weight:600;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.bnext.gen{background:var(--accent)}
+.dlbtns{width:100%;max-width:480px;display:flex;gap:10px;margin-bottom:12px}
+.dlbtn{flex:1;padding:16px;border:none;border-radius:12px;font-family:inherit;font-size:15px;font-weight:700;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.dlbtn.pdf{background:var(--accent)}
+.dlbtn.png{background:var(--dark)}
+.restart{width:100%;max-width:480px;padding:14px;border:1.5px solid var(--light);border-radius:12px;background:none;font-family:inherit;font-size:15px;font-weight:600;color:var(--dark);cursor:pointer}
+.cvframe{width:100%;max-width:480px;border-radius:10px;overflow:hidden;box-shadow:0 4px 28px rgba(0,0,0,.15);margin-bottom:16px;background:#fff;position:relative}
+body.rtl{direction:rtl}
+body.rtl .langbar{justify-content:flex-start}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- Zone de rendu CV cachée pour la capture -->
+<div id="cv-render" style="position:absolute;left:-99999px;top:0;width:794px;background:#fff"></div>
+
+<script>
+// ─── DONNÉES ───────────────────────────────────────────────
+var YEARS=[];for(var y=2026;y>=1950;y--)YEARS.push(String(y));
+var DAYS=[];for(var d=1;d<=31;d++)DAYS.push(String(d).padStart(2,"0"));
+var MONTHS={
+  fr:["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"],
+  en:["January","February","March","April","May","June","July","August","September","October","November","December"],
+  ar:["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"]
+};
+
+var T={
+  fr:{
+    hdrLabel:"Créer mon CV",hdrTitle:["Construis ton","CV idéal."],
+    stepOf:function(c,t){return"Étape "+c+" sur "+t},next:"Continuer →",back:"← Retour",
+    generate:"Générer mon CV",addMore:"+ Ajouter",restart:"← Recommencer",
+    dlPdf:"⬇ PDF",dlPng:"⬇ Image",cvReady:"CV prêt",cvHere:"Voici ton CV.",
+    genHint:"Choisis ton format de téléchargement :",
+    levels:["A1","A2","B1","B2","C1","C2","Natif"],
+    labels:{
+      scolarite:"S C O L A R I T E", experiences:"E X P E R I E N C E S",
+      competences:"C O M P E T E N C E S", langues:"C O M P É T E N C E S &nbsp;&nbsp; L I N G U I S T I Q U E S",
+      profil:"P R O F I L", contact:"C O N T A C T", interets:"C E N T R E S &nbsp; D 'I N T E R E T",
+      pro:"Professionnelles :", sport:"Sportives :"
+    },
+    err:{phone:"Format invalide — ex: 06 95 35 54 53",email:"Email invalide — gmail, hotmail, yahoo, outlook…",req:"Champ requis",dob:"Date de naissance complète requise",period:"Mois et année requis (début et fin)",langLevel:"Niveau requis",linkedin:"Format invalide — ex: linkedin.com/in/votrenom",sportStart:"Mois et année de début requis",sportEnd:"Mois et année de fin requis",sportChrono:"La date de fin doit être après le début",expChrono:"La date de fin doit être après la date de début"},
+    fac:"facultatif",debut:"Début",fin:"Fin",mois:"Mois",annee:"Année",jj:"JJ",present:"Présent",niveau:"Niveau",langue:"Langue",
+    steps:[
+      {icon:"👤",title:"Informations personnelles",sub:"Ces infos apparaissent en haut de ton CV.",fields:[
+        {id:"firstName",label:"Prénom",type:"text",ph:"Valère",req:true,max:40},
+        {id:"lastName",label:"Nom",type:"text",ph:"COULON",req:true,max:40},
+        {id:"dob",label:"Date de naissance",type:"date",req:true},
+        {id:"email",label:"Email",type:"email",ph:"valere@gmail.com",val:"email"},
+        {id:"phone",label:"Téléphone",type:"tel",ph:"06 95 35 54 53",val:"phone"},
+        {id:"city",label:"Ville & code postal",type:"text",ph:"Soulac-sur-Mer, 33780",max:60},
+        {id:"linkedin",label:"LinkedIn (optionnel)",type:"text",ph:"linkedin.com/in/votrenom",max:80,val:"linkedin"},
+        {id:"photo",label:"Photo de profil",type:"photo"}
+      ]},
+      {icon:"💬",title:"Profil",sub:"2-3 phrases qui te définissent professionnellement.",fields:[
+        {id:"bio",label:"Ton profil",type:"textarea",ph:"Jovial, engagé et sérieux, je sais concilier rigueur professionnelle et esprit d'équipe.",max:300}
+      ]},
+      {icon:"💼",title:"Expériences professionnelles",sub:"Du plus récent au plus ancien.",type:"list",listId:"experiences",listFields:[
+        {id:"company",label:"Entreprise",ph:"Maison Brémontier",req:true},
+        {id:"location",label:"Ville",ph:"Soulac-sur-mer"},
+        {id:"category",label:"Secteur",ph:"Restauration & Hôtellerie"},
+        {id:"role",label:"Poste occupé",ph:"Commis de Cuisine"},
+        {id:"period",label:"Période",type:"workdate"}
+      ]},
+      {icon:"🎓",title:"Scolarité",sub:"Diplômes du plus récent au plus ancien.",type:"list",listId:"education",listFields:[
+        {id:"year",label:"Année",type:"yearonly"},
+        {id:"degree",label:"Diplôme / Certification",ph:"Baccalauréat Général",req:true}
+      ]},
+      {icon:"⚽",title:"Expériences sportives & associatives",sub:"Facultatif — sport, bénévolat, clubs…",type:"list",listId:"sportExp",listFields:[
+        {id:"activity",label:"Activité",ph:"Basketteur, Bénévole, Surfeur…",max:60},
+        {id:"period",label:"Période",type:"sportdate"},
+        {id:"level",label:"Niveau / Détail (optionnel)",ph:"Compétition régionale, Club amateur…",max:80}
+      ]},
+      {icon:"🛠",title:"Compétences",sub:"Outils, logiciels, savoir-faire.",type:"list",listId:"skills",listFields:[
+        {id:"skill",label:"Compétence",ph:"Gestion caisse, Adobe Suite…",req:true,max:60}
+      ]},
+      {icon:"🌍",title:"Langues",sub:"Sélectionne ton niveau.",type:"langlist",listId:"languages"},
+      {icon:"✨",title:"Centres d'intérêt",sub:"Sport, voyages, passions.",type:"list",listId:"interests",listFields:[
+        {id:"category",label:"Catégorie",ph:"Sport / Voyages / Autre…",max:40},
+        {id:"value",label:"Détail",ph:"Renforcement musculaire, Maroc…",max:100}
+      ]}
+    ]
+  },
+  en:{
+    hdrLabel:"Build my CV",hdrTitle:["Build your","perfect CV."],
+    stepOf:function(c,t){return"Step "+c+" of "+t},next:"Continue →",back:"← Back",
+    generate:"Generate my CV",addMore:"+ Add",restart:"← Start over",
+    dlPdf:"⬇ PDF",dlPng:"⬇ Image",cvReady:"CV ready",cvHere:"Here's your CV.",
+    genHint:"Choose your download format:",
+    levels:["A1","A2","B1","B2","C1","C2","Native"],
+    labels:{
+      scolarite:"E D U C A T I O N", experiences:"E X P E R I E N C E S",
+      competences:"S K I L L S", langues:"L A N G U A G E &nbsp; S K I L L S",
+      profil:"P R O F I L E", contact:"C O N T A C T", interets:"I N T E R E S T S",
+      pro:"Professional :", sport:"Sport & activities :"
+    },
+    err:{phone:"Invalid format — e.g. +33 6 95 35 54 53",email:"Invalid email — gmail, hotmail, yahoo, outlook…",req:"Required field",dob:"Complete date of birth required",period:"Month and year required (start and end)",langLevel:"Level required",linkedin:"Invalid format — e.g. linkedin.com/in/yourname",sportStart:"Start month and year required",sportEnd:"End month and year required",sportChrono:"End date must be after start date",expChrono:"End date must be after start date"},
+    fac:"optional",debut:"Start",fin:"End",mois:"Month",annee:"Year",jj:"DD",present:"Present",niveau:"Level",langue:"Language",
+    steps:[
+      {icon:"👤",title:"Personal info",sub:"Appears at the top of your CV.",fields:[
+        {id:"firstName",label:"First name",type:"text",ph:"Valère",req:true,max:40},
+        {id:"lastName",label:"Last name",type:"text",ph:"COULON",req:true,max:40},
+        {id:"dob",label:"Date of birth",type:"date",req:true},
+        {id:"email",label:"Email",type:"email",ph:"valere@gmail.com",val:"email"},
+        {id:"phone",label:"Phone",type:"tel",ph:"+33 6 95 35 54 53",val:"phone"},
+        {id:"city",label:"City & postcode",type:"text",ph:"Soulac-sur-Mer, 33780",max:60},
+        {id:"linkedin",label:"LinkedIn (optional)",type:"text",ph:"linkedin.com/in/yourname",max:80,val:"linkedin"},
+        {id:"photo",label:"Profile photo",type:"photo"}
+      ]},
+      {icon:"💬",title:"Profile",sub:"2-3 sentences defining you professionally.",fields:[
+        {id:"bio",label:"Your profile",type:"textarea",ph:"Motivated and reliable, I combine professionalism with team spirit.",max:300}
+      ]},
+      {icon:"💼",title:"Work experience",sub:"Most recent first.",type:"list",listId:"experiences",listFields:[
+        {id:"company",label:"Company",ph:"Maison Brémontier",req:true},
+        {id:"location",label:"City",ph:"Soulac-sur-mer"},
+        {id:"category",label:"Sector",ph:"Hospitality"},
+        {id:"role",label:"Position",ph:"Kitchen Assistant"},
+        {id:"period",label:"Period",type:"workdate"}
+      ]},
+      {icon:"🎓",title:"Education",sub:"Most recent first.",type:"list",listId:"education",listFields:[
+        {id:"year",label:"Year",type:"yearonly"},
+        {id:"degree",label:"Degree / Certification",ph:"French Baccalaureate",req:true}
+      ]},
+      {icon:"⚽",title:"Sports & associations",sub:"Optional — sport, volunteering, clubs…",type:"list",listId:"sportExp",listFields:[
+        {id:"activity",label:"Activity",ph:"Basketball, Volunteer, Surfer…",max:60},
+        {id:"period",label:"Period",type:"sportdate"},
+        {id:"level",label:"Level / Detail (optional)",ph:"Regional competition, Amateur club…",max:80}
+      ]},
+      {icon:"🛠",title:"Skills",sub:"Tools, software, know-how.",type:"list",listId:"skills",listFields:[
+        {id:"skill",label:"Skill",ph:"Cash register, Adobe Suite…",req:true,max:60}
+      ]},
+      {icon:"🌍",title:"Languages",sub:"Select your level.",type:"langlist",listId:"languages"},
+      {icon:"✨",title:"Interests",sub:"Sport, travel, passions.",type:"list",listId:"interests",listFields:[
+        {id:"category",label:"Category",ph:"Sport / Travel / Other…",max:40},
+        {id:"value",label:"Detail",ph:"Weight training, Morocco…",max:100}
+      ]}
+    ]
+  },
+  ar:{
+    hdrLabel:"إنشاء سيرتي الذاتية",hdrTitle:["ابنِ سيرتك","الذاتية المثالية."],
+    stepOf:function(c,t){return"الخطوة "+c+" من "+t},next:"متابعة ←",back:"→ رجوع",
+    generate:"إنشاء سيرتي",addMore:"+ إضافة",restart:"← البدء من جديد",
+    dlPdf:"⬇ PDF",dlPng:"⬇ صورة",cvReady:"السيرة جاهزة",cvHere:"ها هي سيرتك الذاتية.",
+    genHint:"اختر صيغة التنزيل:",
+    levels:["A1","A2","B1","B2","C1","C2","أصيل"],
+    labels:{
+      scolarite:"ا ل ت ع ل ي م", experiences:"ا ل خ ب ر ا ت",
+      competences:"ا ل م ه ا ر ا ت", langues:"ا ل ك ف ا ء ا ت &nbsp; ا ل ل غ و ي ة",
+      profil:"الملف الشخصي", contact:"ا ل ت و ا ص ل", interets:"الاهتمامات",
+      pro:":المهنية", sport:":الرياضية"
+    },
+    err:{phone:"تنسيق غير صحيح",email:"بريد غير صحيح — gmail, hotmail, yahoo…",req:"حقل مطلوب",dob:"تاريخ ميلاد كامل مطلوب",period:"الشهر والسنة مطلوبان (البداية والنهاية)",langLevel:"المستوى مطلوب",linkedin:"تنسيق غير صحيح — مثال: linkedin.com/in/اسمك",sportStart:"شهر وسنة البداية مطلوبان",sportEnd:"شهر وسنة النهاية مطلوبان",sportChrono:"تاريخ النهاية يجب أن يكون بعد البداية",expChrono:"تاريخ النهاية يجب أن يكون بعد تاريخ البداية"},
+    fac:"اختياري",debut:"البداية",fin:"النهاية",mois:"الشهر",annee:"السنة",jj:"يوم",present:"حتى الآن",niveau:"المستوى",langue:"اللغة",
+    steps:[
+      {icon:"👤",title:"المعلومات الشخصية",sub:"تظهر في أعلى سيرتك الذاتية.",fields:[
+        {id:"firstName",label:"الاسم الأول",type:"text",ph:"فاليير",req:true,max:40},
+        {id:"lastName",label:"اسم العائلة",type:"text",ph:"كولون",req:true,max:40},
+        {id:"dob",label:"تاريخ الميلاد",type:"date",req:true},
+        {id:"email",label:"البريد الإلكتروني",type:"email",ph:"valere@gmail.com",val:"email"},
+        {id:"phone",label:"الهاتف",type:"tel",ph:"06 XX XX XX XX",val:"phone"},
+        {id:"city",label:"المدينة",type:"text",ph:"سولاك سور مير",max:60},
+        {id:"linkedin",label:"LinkedIn (اختياري)",type:"text",ph:"linkedin.com/in/اسمك",max:80,val:"linkedin"},
+        {id:"photo",label:"الصورة الشخصية",type:"photo"}
+      ]},
+      {icon:"💬",title:"الملف الشخصي",sub:"جملتان أو ثلاث تعرّفك مهنياً.",fields:[
+        {id:"bio",label:"نبذتك",type:"textarea",ph:"شخص نشيط وجاد…",max:300}
+      ]},
+      {icon:"💼",title:"الخبرات المهنية",sub:"من الأحدث إلى الأقدم.",type:"list",listId:"experiences",listFields:[
+        {id:"company",label:"الشركة",ph:"مايزون بريمونتيي",req:true},
+        {id:"location",label:"المدينة",ph:"سولاك سور مير"},
+        {id:"category",label:"القطاع",ph:"الضيافة"},
+        {id:"role",label:"المنصب",ph:"مساعد طاهٍ"},
+        {id:"period",label:"الفترة",type:"workdate"}
+      ]},
+      {icon:"🎓",title:"التعليم",sub:"من الأحدث إلى الأقدم.",type:"list",listId:"education",listFields:[
+        {id:"year",label:"السنة",type:"yearonly"},
+        {id:"degree",label:"الشهادة",ph:"البكالوريا العامة",req:true}
+      ]},
+      {icon:"⚽",title:"الأنشطة الرياضية والجمعوية",sub:"اختياري — رياضة، تطوع، أندية…",type:"list",listId:"sportExp",listFields:[
+        {id:"activity",label:"النشاط",ph:"كرة سلة، متطوع، ركوب أمواج…",max:60},
+        {id:"period",label:"الفترة",type:"sportdate"},
+        {id:"level",label:"المستوى / التفاصيل (اختياري)",ph:"منافسات، نادٍ هاوٍ…",max:80}
+      ]},
+      {icon:"🛠",title:"المهارات",sub:"الأدوات والكفاءات.",type:"list",listId:"skills",listFields:[
+        {id:"skill",label:"المهارة",ph:"مراقبة الصندوق…",req:true,max:60}
+      ]},
+      {icon:"🌍",title:"اللغات",sub:"اختر مستواك.",type:"langlist",listId:"languages"},
+      {icon:"✨",title:"الاهتمامات",sub:"الرياضة، السفر، الهوايات.",type:"list",listId:"interests",listFields:[
+        {id:"category",label:"الفئة",ph:"رياضة / سفر / أخرى…",max:40},
+        {id:"value",label:"التفاصيل",ph:"رياضة القوة، المغرب…",max:100}
+      ]}
+    ]
+  }
+};
+
+// ─── UTILS ───────────────────────────────────────────────
+function fmtPeriod(v,lang){
+  if(!v)return"";var ms=MONTHS[lang]||MONTHS.fr;
+  var pres=lang==="ar"?"حتى الآن":lang==="en"?"Present":"PRÉSENT";
+  var s=[v.day?v.day:"",v.month?ms[parseInt(v.month)-1]:"",v.year].filter(Boolean).join(" ");
+  if(v.present)return s?s.toUpperCase()+" — "+pres:pres;
+  var e=[v.endDay?v.endDay:"",v.endMonth?ms[parseInt(v.endMonth)-1]:"",v.endYear].filter(Boolean).join(" ");
+  if(s&&e)return s.toUpperCase()+" / "+e.toUpperCase();
+  return(s||e).toUpperCase();
+}
+function fmtDOB(v){if(!v)return"";return[v.day,v.month,v.year].filter(Boolean).join("/")}
+function okPhone(v){var d=(v||"").replace(/[\s.\-+()\u00A0]/g,"");return d.length>=8&&d.length<=15&&/^\d+$/.test(d)}
+function okLinkedin(v){
+  if(!v)return true; // optionnel
+  return /linkedin\.com\/in\//i.test(v);
+}
+function okEmail(v){
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v||""))return false;
+  var known=["gmail","hotmail","yahoo","outlook","icloud","live","msn","free","orange","sfr","laposte","wanadoo","bbox","protonmail","pm","tutanota","aol","gmx","yandex","mail","ovh","me"];
+  var domain=(v||"").split("@")[1]||"";var base=domain.split(".")[0].toLowerCase();
+  return known.indexOf(base)!==-1;
+}
+function okPeriod(v){
+  if(!v||v.present)return true;
+  if(!v.year||!v.endYear)return true;
+  var sy=parseInt(v.year),ey=parseInt(v.endYear);
+  if(sy>ey)return false;
+  if(sy===ey&&v.month&&v.endMonth)return parseInt(v.month)<=parseInt(v.endMonth);
+  return true;
+}
+
+function getEndYear(item) {
+  // Présent = 9999
+  if (item.period && item.period.present) return 9999;
+  if (item.period && item.period.endPresent) return 9999;
+  // Expériences pro
+  if (item.period && item.period.endYear) return parseInt(item.period.endYear);
+  // Expériences sportives
+  if (item.period && item.period.endYear) return parseInt(item.period.endYear);
+  // Scolarité (pas de fin, utiliser l'année)
+  if (item.year) return parseInt(item.year);
+  return 0;
+}
+function getEndMonth(item) {
+  if (item.period && item.period.present) return 12;
+  if (item.period && item.period.endPresent) return 12;
+  if (item.period && item.period.endMonth) return parseInt(item.period.endMonth);
+  return 0;
+}
+function getStartYear(item) {
+  if (item.period && item.period.year) return parseInt(item.period.year);
+  if (item.period && item.period.startYear) return parseInt(item.period.startYear);
+  if (item.year) return parseInt(item.year);
+  return 0;
+}
+function sortDesc(arr) {
+  return arr.slice().sort(function(a, b) {
+    var ya = getEndYear(a), yb = getEndYear(b);
+    if (yb !== ya) return yb - ya;
+    var ma = getEndMonth(a), mb = getEndMonth(b);
+    if (mb !== ma) return mb - ma;
+    // Égalité de fin : trier par début
+    return getStartYear(b) - getStartYear(a);
+  });
+}
+function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+
+// ─── CV HTML ───────────────────────────────────────────────
+function buildCV(data,photo,lang){
+  var L2=T[lang]?T[lang].labels:T.fr.labels;
+  var fn=data.firstName||"";var fnClean=fn.charAt(0).toUpperCase()+fn.slice(1).toLowerCase();var fullName=fnClean+" "+(data.lastName||"").toUpperCase();fullName=fullName.trim();
+  var exps=(data.experiences||[]).filter(function(e){return e.company||e.role});
+  var edus=(data.education||[]).filter(function(e){return e.degree||e.year});
+  var skills=(data.skills||[]).filter(function(s){return s.skill});
+  var langs=(data.languages||[]).filter(function(l){return l.name});
+  var interests=(data.interests||[]).filter(function(x){return x.value||x.category});
+  // Trier du plus récent au plus ancien
+  exps = sortDesc(exps);
+  edus = sortDesc(edus);
+  var groups={};
+  exps.forEach(function(e){var c=(e.category||"Autre").toUpperCase();if(!groups[c])groups[c]=[];groups[c].push(e)});
+
+  var total=edus.length+exps.length+langs.length;
+  var dense=total>=6;
+  var eduFs=dense?16:19,expN=dense?15:18,expR=dense?14:16,langFs=dense?16:19;
+  var sepMt=dense?28:38,entMb=dense?18:28;var PAGE_H=1123;
+
+  function sep(t){return'<div style="margin:'+sepMt+'px 0 24px;text-align:center"><div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.16em;color:#888">'+t+'</div><div style="width:50px;height:2px;background:#aaa;margin:10px auto 0"></div></div>'}
+  function ssep(t){return'<div style="margin-bottom:16px"><div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.22em;color:#999">'+t+'</div><div style="width:36px;height:1.5px;background:#ccc;margin-top:8px;margin-bottom:16px"></div></div>'}
+
+  var main="";
+  if(edus.length){main+=sep(L2.scolarite);edus.forEach(function(e){main+='<div style="font-size:'+eduFs+'px;color:#111;margin-bottom:'+entMb+'px;text-align:center;line-height:1.5"><strong>'+esc(e.year)+'</strong>'+(e.year&&e.degree?" &nbsp;—&nbsp; ":"")+esc(e.degree)+'</div>'})}
+  var sportExps=(data.sportExp||[]).filter(function(s){return s.activity});
+  if(exps.length){
+    main+=sep(L2.experiences);
+    main+='<div style="font-size:17px;font-weight:700;color:#333;margin-bottom:20px">'+L2.pro+'</div>';
+    Object.keys(groups).forEach(function(cat){
+      main+='<div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.2em;color:#222;text-align:center;margin:24px 0 20px">'+esc(cat)+'</div>';
+      groups[cat].forEach(function(e){
+        var p=fmtPeriod(e.period,lang);
+        main+='<div style="margin-bottom:'+entMb+'px"><div style="font-size:'+expN+'px;font-weight:700;color:#111;line-height:1.4">'+esc(e.company)+(e.location?' <span style="font-weight:400;font-size:'+(expN-3)+'px;color:#222">('+esc(e.location)+')</span>':"")+'</div><div style="margin-top:8px;font-size:'+(expR-1)+'px;color:#222;line-height:1.5;text-align:center;font-family:Helvetica,Arial,sans-serif;letter-spacing:0.03em">'+(p?esc(p):"")+(p&&e.role?" &nbsp;⇾&nbsp; ":"")+esc(e.role)+'</div></div>';
+      });
+    });
+  }
+  sportExps = sortDesc(sportExps);
+  if(sportExps.length){
+    main+='<div style="font-size:17px;font-weight:700;color:#333;margin-bottom:20px;margin-top:'+sepMt+'px">'+L2.sport+'</div>';
+    sportExps.forEach(function(s){
+      var sp=s.period||{};var ms2=MONTHS[lang]||MONTHS.fr;
+      var spParts=[sp.startDay?sp.startDay:"",sp.startMonth?ms2[parseInt(sp.startMonth)-1]:"",sp.startYear].filter(Boolean).join(" ");
+      var spEnd=sp.endPresent?(lang==="ar"?"حتى الآن":lang==="en"?"Present":"PRÉSENT"):[sp.endDay?sp.endDay:"",sp.endMonth?ms2[parseInt(sp.endMonth)-1]:"",sp.endYear].filter(Boolean).join(" ");
+      var spStr=spParts&&spEnd?spParts.toUpperCase()+" — "+spEnd.toUpperCase():spParts.toUpperCase()||spEnd.toUpperCase();
+      main+='<div style="margin-bottom:'+entMb+'px">'
+        +'<div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.2em;color:#222;text-align:center;margin-bottom:12px">'+esc(s.activity.toUpperCase())+'</div>'
+        +(spStr?'<div style="font-size:'+(expR-1)+'px;color:#222;text-align:center;font-family:Helvetica,Arial,sans-serif;letter-spacing:0.03em;margin-bottom:4px">'+esc(spStr)+'</div>':"")
+        +(s.level?'<div style="font-size:'+(expR-2)+'px;color:#999;text-align:center">'+esc(s.level)+'</div>':"")
+        +'</div>';
+    });
+  }
+  if(langs.length){
+    var levelOrder=["Natif","Native","أصيل","C2","C1","B2","B1","A2","A1"];
+    var sortedLangs=langs.slice().sort(function(a,b){
+      var ia=levelOrder.indexOf(a.level);var ib=levelOrder.indexOf(b.level);
+      if(ia===-1)ia=levelOrder.length;if(ib===-1)ib=levelOrder.length;
+      return ia-ib;
+    });
+    main+=sep(L2.langues);
+    main+='<div style="display:flex;justify-content:center;gap:44px;flex-wrap:wrap;padding:10px 0">';
+    sortedLangs.forEach(function(l){main+='<div style="font-size:'+langFs+'px;color:#111;text-align:center"><strong>'+esc(l.name)+'</strong>'+(l.level?" : <em>"+esc(l.level)+"</em>":"")+'</div>'});
+    main+='</div>';
+  }
+
+  var sf=15;var side=photo?'<div style="width:130px;height:130px;border-radius:50%;overflow:hidden;margin:0 auto 26px;border:3px solid #ddd"><img src="'+photo+'" style="width:130px;height:130px;object-fit:cover;display:block"/></div>':"";
+  side+='<div style="margin-bottom:32px">'+ssep(L2.profil);
+  if(data.dob)side+='<div style="font-size:13px;color:#777;margin-bottom:12px;font-style:italic">'+esc(fmtDOB(data.dob))+'</div>';
+  side+='<div style="font-size:'+sf+'px;color:#333;line-height:2">'+esc(data.bio).replace(/\n/g,"<br>")+'</div></div>';
+  var cl="";
+  if(data.city)cl+='<div style="margin-bottom:12px;display:flex;gap:8px;align-items:flex-start"><span style="font-size:17px">📍</span><strong style="font-size:'+sf+'px">'+esc(data.city)+'</strong></div>';
+  if(data.email)cl+='<div style="margin-bottom:12px;display:flex;gap:8px;align-items:flex-start;word-break:break-all"><span style="font-size:17px">✉</span><span style="font-size:'+sf+'px">'+esc(data.email)+'</span></div>';
+  if(data.phone)cl+='<div style="margin-bottom:12px;display:flex;gap:8px;align-items:flex-start"><span style="font-size:17px">📞</span><strong style="font-size:'+sf+'px">'+esc(data.phone)+'</strong></div>';
+  if(data.linkedin)cl+='<div style="font-size:12px;display:flex;gap:8px;word-break:break-all"><span style="font-size:17px">🔗</span><span>'+esc(data.linkedin)+'</span></div>';
+  if(cl)side+='<div style="margin-bottom:32px">'+ssep(L2.contact)+'<div>'+cl+'</div></div>';
+  var ci="";
+  interests.forEach(function(x){
+    if(x.category)ci+='<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#222;margin-bottom:4px;letter-spacing:0.06em">'+esc(x.category.toUpperCase())+' :</div><div style="font-size:'+sf+'px;color:#444;line-height:1.9">'+esc(x.value)+'</div></div>';
+    else ci+='<div style="font-size:'+sf+'px;color:#444;line-height:1.9;margin-bottom:8px">'+esc(x.value)+'</div>';
+  });
+  if(ci)side+='<div style="margin-bottom:32px">'+ssep(L2.interets)+ci+'</div>';
+  if(skills.length){side+='<div style="margin-bottom:32px">'+ssep(L2.competences)+'<div style="font-size:'+sf+'px;color:#444;line-height:2.2">';skills.forEach(function(s){side+='<div>· <strong>'+esc(s.skill)+'</strong></div>'});side+='</div></div>'}
+
+  return'<div style="display:flex;width:794px;min-height:'+PAGE_H+'px;background:white;font-family:Helvetica,Arial,sans-serif">'
+    +'<div style="width:264px;min-width:264px;background:#f2f2ee;padding:36px 22px;min-height:'+PAGE_H+'px">'+side+'</div>'
+    +'<div style="flex:1;padding:44px 40px 44px 32px;background:white;min-height:'+PAGE_H+'px">'
+    +'<div style="font-size:56px;font-weight:300;letter-spacing:0.07em;color:#111;line-height:1">'+esc(fullName)+'</div>'
+    +'<div style="width:64px;height:2px;background:#bbb;margin-top:20px"></div>'+main+'</div></div>';
+}
+
+// ─── ÉTAT ───────────────────────────────────────────────
+var state={lang:"fr",step:0,photo:null,generated:false,errors:{},
+  data:{firstName:"",lastName:"",dob:null,jobTitle:"",email:"",phone:"",city:"",linkedin:"",bio:"",experiences:[],education:[],sportExp:[],skills:[],languages:[],interests:[]}};
+
+function L(){return T[state.lang]}
+// setF SANS render — préserve le focus clavier sur mobile
+function setF(id,v){state.data[id]=v;if(state.errors[id]){delete state.errors[id];var el=document.getElementById("err_"+id);if(el)el.style.display="none";var inp=document.getElementById("fld_"+id);if(inp)inp.classList.remove("err-input")}updateCharCount(id,v)}
+function setLst(lid,v){state.data[lid]=v;render()}
+function updateCharCount(id,v){var el=document.getElementById("cc_"+id);if(el){var max=el.getAttribute("data-max");el.textContent=(v||"").length+"/"+max}}
+
+function validate(){
+  var errs={};var cur=L().steps[state.step];
+  if(!cur.type&&cur.fields){
+    cur.fields.forEach(function(f){
+      var v=state.data[f.id];
+      if(f.type==="date"){if(f.req){var dv=v||{};if(!dv.day||!dv.month||!dv.year)errs[f.id]=L().err.dob}}
+      else{
+        if(f.req&&!v)errs[f.id]=L().err.req;
+        if(f.val==="phone"&&v&&!okPhone(v))errs[f.id]=L().err.phone;
+        if(f.val==="email"&&v&&!okEmail(v))errs[f.id]=L().err.email;
+      }
+    });
+  }
+  if(cur.type==="langlist"){(state.data.languages||[]).forEach(function(l,i){if(l.name&&!l.level)errs["lang_level_"+i]=true})}
+  if(cur.type==="list"&&cur.listId==="sportExp"){
+    (state.data.sportExp||[]).forEach(function(s,i){
+      var sv=s.period||{};
+      if(!sv.startMonth||!sv.startYear)errs["sport_start_"+i]=L().err.sportStart;
+      if(!sv.endPresent&&(!sv.endMonth||!sv.endYear))errs["sport_end_"+i]=L().err.sportEnd;
+      if(!errs["sport_start_"+i]&&!errs["sport_end_"+i]&&!sv.endPresent&&sv.startYear&&sv.endYear&&parseInt(sv.startYear)>parseInt(sv.endYear))
+        errs["sport_chrono_"+i]=L().err.sportChrono;
+    });
+  }
+  if(cur.type==="list"&&cur.listId==="experiences"){
+    (state.data.experiences||[]).forEach(function(e,i){
+      var p=e.period||{};
+      if(!p.month||!p.year)errs["exp_ps_"+i]=true;
+      if(!p.present&&(!p.endMonth||!p.endYear))errs["exp_pe_"+i]=true;
+      if(!p.present&&!errs["exp_ps_"+i]&&!errs["exp_pe_"+i]&&!okPeriod(p))errs["exp_chrono_"+i]=L().err.expChrono;
+    });
+  }
+  state.errors=errs;
+  return Object.keys(errs).length===0;
+}
+function showErrors(){
+  Object.keys(state.errors).forEach(function(k){
+    var el=document.getElementById("err_"+k);
+    if(el){el.style.display="block";el.style.color="#e53e3e";el.style.fontWeight="600"}
+    var inp=document.getElementById("fld_"+k);
+    if(inp)inp.style.borderColor="#e53e3e";
+  });
+}
+
+function onNext(){if(validate()){state.step++;render();window.scrollTo({top:0,behavior:"smooth"})}else{render();requestAnimationFrame(showErrors)}}
+function onBack(){state.step--;render();window.scrollTo({top:0,behavior:"smooth"})}
+function onGenerate(){if(validate()){state.generated=true;render();window.scrollTo({top:0,behavior:"smooth"})}else{render();requestAnimationFrame(showErrors)}}
+
+function handlePhoto(input){
+  var file=input.files&&input.files[0];if(!file)return;
+  var r=new FileReader();r.onload=function(e){state.photo=e.target.result;render()};r.readAsDataURL(file);
+}
+
+// ─── DOWNLOAD ───────────────────────────────────────────────
+function renderCVtoNode(){
+  var node=document.getElementById("cv-render");
+  node.innerHTML=buildCV(state.data,state.photo,state.lang);
+  return node.firstChild;
+}
+function downloadPNG(){
+  var btn=document.getElementById("btn-png");var orig=btn.innerHTML;btn.innerHTML='<span class="spinner"></span>';
+  var el=renderCVtoNode();
+  cropPhotoToSquare(function(){
+    html2canvas(el,{scale:2,useCORS:true,backgroundColor:"#ffffff"}).then(function(canvas){
+      var link=document.createElement("a");
+      link.download="CV_"+(state.data.firstName||"mon")+"_"+(state.data.lastName||"cv")+".png";
+      link.href=canvas.toDataURL("image/png");
+      document.body.appendChild(link);link.click();document.body.removeChild(link);
+      btn.innerHTML=orig;
+    }).catch(function(){btn.innerHTML=orig});
+  });
+}
+function cropPhotoToSquare(callback){
+  // Trouve l'image dans cv-render et la recadre en carré avant capture
+  var img = document.querySelector('#cv-render img');
+  if(!img){ callback(); return; }
+  var size = 260; // 130px * 2 (DPR)
+  var canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  var ctx = canvas.getContext('2d');
+  var sw = img.naturalWidth, sh = img.naturalHeight;
+  var side = Math.min(sw, sh);
+  var sx = (sw - side) / 2, sy = (sh - side) / 2;
+  ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+  img.src = canvas.toDataURL('image/jpeg', 0.95);
+  img.onload = callback;
+  if(img.complete) callback();
+}
+function downloadPDF(){
+  var btn=document.getElementById("btn-pdf");var orig=btn.innerHTML;btn.innerHTML='<span class="spinner"></span>';
+  var el=renderCVtoNode();
+  cropPhotoToSquare(function(){
+    html2canvas(el,{scale:2,useCORS:true,backgroundColor:"#ffffff"}).then(function(canvas){
+      var jsPDF=window.jspdf.jsPDF;
+      var pdf=new jsPDF({unit:"px",format:[canvas.width,canvas.height]});
+      pdf.addImage(canvas.toDataURL("image/jpeg",0.95),"JPEG",0,0,canvas.width,canvas.height);
+      pdf.save("CV_"+(state.data.firstName||"mon")+"_"+(state.data.lastName||"cv")+".pdf");
+      btn.innerHTML=orig;
+    }).catch(function(){btn.innerHTML=orig});
+  });
+}
+
+// ─── RENDU UI ───────────────────────────────────────────────
+function field(f){
+  var l=L();var err=state.errors[f.id];var v=state.data[f.id];
+  if(f.type==="photo"){
+    return'<div class="field"><label>'+f.label+'</label><label class="photobox">'+
+      (state.photo?'<img src="'+state.photo+'" class="photoimg"><p style="font-size:13px;color:#888">'+(state.lang==="ar"?"تغيير":"Changer")+'</p>':'<div style="font-size:26px;margin-bottom:8px">📷</div><p style="font-weight:600;font-size:14px;color:#111;margin-bottom:3px">'+(state.lang==="ar"?"إضافة صورة":"Ajouter une photo")+'</p>')+
+      '<input type="file" accept="image/*" onchange="handlePhoto(this)"></label></div>';
+  }
+  if(f.type==="date"){
+    var dv=v||{};var ms=MONTHS[state.lang]||MONTHS.fr;
+    var dd='<select id="fld_d_'+f.id+'" onchange="updateDate(\''+f.id+'\',\'day\',this.value)"><option value="">'+l.jj+'</option>'+DAYS.map(function(d){return'<option '+(dv.day===d?"selected":"")+'>'+d+'</option>'}).join("")+'</select>';
+    var mm='<select onchange="updateDate(\''+f.id+'\',\'month\',this.value)"><option value="">'+l.mois+'</option>'+ms.map(function(m,i){var val=String(i+1).padStart(2,"0");return'<option value="'+val+'" '+(dv.month===val?"selected":"")+'>'+m+'</option>'}).join("")+'</select>';
+    var yy='<select onchange="updateDate(\''+f.id+'\',\'year\',this.value)"><option value="">'+l.annee+'</option>'+YEARS.map(function(y){return'<option '+(dv.year===y?"selected":"")+'>'+y+'</option>'}).join("")+'</select>';
+    return'<div class="field"><label>'+f.label+(f.req?" *":"")+'</label><div class="err" id="err_'+f.id+'" style="display:'+(err?"block":"none")+';margin-bottom:5px;font-weight:600">'+( err||""  )+'</div>'+
+      '<div class="daterow"><div style="flex:0 0 70px">'+dd+'</div><div style="flex:1">'+mm+'</div><div style="flex:0 0 88px">'+yy+'</div></div></div>';
+  }
+  if(f.type==="textarea"){
+    return'<div class="field"><label>'+f.label+(f.req?" *":"")+'</label><textarea id="fld_'+f.id+'" class="'+(err?"err-input":"")+'" placeholder="'+(f.ph||"")+'" maxlength="'+(f.max||500)+'" oninput="setF(\''+f.id+'\',this.value)">'+(v||"")+'</textarea>'+
+      (f.max?'<div class="charcount" id="cc_'+f.id+'" data-max="'+f.max+'">'+((v||"").length)+'/'+f.max+'</div>':"")+'<div class="err" id="err_'+f.id+'" style="display:'+(err?"block":"none")+'">'+(err||"")+'</div></div>';
+  }
+  return'<div class="field"><label>'+f.label+(f.req?" *":"")+'</label><input id="fld_'+f.id+'" class="'+(err?"err-input":"")+'" type="'+(f.type||"text")+'" placeholder="'+(f.ph||"")+'" maxlength="'+(f.max||200)+'" value="'+(v||"").replace(/"/g,"&quot;")+'" oninput="setF(\''+f.id+'\',this.value)"><div class="err" id="err_'+f.id+'" style="display:'+(err?"block":"none")+'">'+(err||"")+'</div></div>';
+}
+
+function updateDate(id,key,val){var d=state.data[id]||{};d[key]=val;state.data[id]=d;delete state.errors[id];render()}
+
+function workdate(lid,i,fid){
+  var l=L();var items=state.data[lid]||[];var v=items[i][fid]||{};var ms=MONTHS[state.lang]||MONTHS.fr;
+  var err=state.errors["exp_ps_"+i]||state.errors["exp_pe_"+i];
+  function sel(key,ph,opts){return'<select onchange="updateWork('+i+',\''+fid+'\',\''+key+'\',this.value)"><option value="">'+ph+'</option>'+opts+'</select>'}
+  var dayOpts=DAYS.map(function(d){return'<option '+(v.day===d?"selected":"")+'>'+d+'</option>'}).join("");
+  var dayOptsE=DAYS.map(function(d){return'<option '+(v.endDay===d?"selected":"")+'>'+d+'</option>'}).join("");
+  var monOpts=ms.map(function(m,k){var val=String(k+1).padStart(2,"0");return'<option value="'+val+'" '+(v.month===val?"selected":"")+'>'+m+'</option>'}).join("");
+  var monOptsE=ms.map(function(m,k){var val=String(k+1).padStart(2,"0");return'<option value="'+val+'" '+(v.endMonth===val?"selected":"")+'>'+m+'</option>'}).join("");
+  var yrOpts=YEARS.map(function(y){return'<option '+(v.year===y?"selected":"")+'>'+y+'</option>'}).join("");
+  var yrOptsE=YEARS.map(function(y){return'<option '+(v.endYear===y?"selected":"")+'>'+y+'</option>'}).join("");
+  var h='<div class="field"><label>'+l.steps[state.step].listFields.filter(function(x){return x.id===fid})[0].label+'</label>';
+  h+='<div style="font-size:10px;color:#bbb;font-style:italic;margin-bottom:4px">'+l.debut+'</div>';
+  h+='<div class="daterow" style="margin-bottom:8px"><div class="datecol" style="flex:0 0 58px"><span class="fac">'+l.fac+'</span>'+sel("day",l.jj,dayOpts)+'</div><div style="flex:1">'+sel("month",l.mois,monOpts)+'</div><div style="flex:0 0 84px">'+sel("year",l.annee,yrOpts)+'</div></div>';
+  if(!v.present){
+    h+='<div style="font-size:10px;color:#bbb;font-style:italic;margin-bottom:4px">'+l.fin+'</div>';
+    h+='<div class="daterow"><div class="datecol" style="flex:0 0 58px"><span class="fac">'+l.fac+'</span>'+sel("endDay",l.jj,dayOptsE)+'</div><div style="flex:1">'+sel("endMonth",l.mois,monOptsE)+'</div><div style="flex:0 0 84px">'+sel("endYear",l.annee,yrOptsE)+'</div></div>';
+  }
+  h+='<label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:#666;cursor:pointer"><input type="checkbox" '+(v.present?"checked":"")+' onchange="updateWork('+i+',\''+fid+'\',\'present\',this.checked)">'+l.present+'</label>';
+  if(state.errors["exp_chrono_"+i])h+='<div class="err" style="display:block">'+state.errors["exp_chrono_"+i]+'</div>';
+  else if(err)h+='<div class="err">'+l.err.period+'</div>';
+  h+='</div>';
+  return h;
+}
+function updateWork(i,fid,key,val){
+  var items=state.data.experiences.slice();var v=items[i][fid]||{};
+  if(key==="present"){v.present=val;if(val){v.endMonth="";v.endYear="";v.endDay=""}}else{v[key]=val}
+  items[i][fid]=v;state.data.experiences=items;
+  delete state.errors["exp_ps_"+i];delete state.errors["exp_pe_"+i];delete state.errors["exp_chrono_"+i];
+  render();
+}
+
+function listBlock(lid,lf){
+  var l=L();var items=state.data[lid]||[];var h="";
+  items.forEach(function(it,i){
+    h+='<div class="li"><button class="rm" onclick="removeItem(\''+lid+'\','+i+')">×</button>';
+    lf.forEach(function(f){
+      if(f.type==="workdate"){h+=workdate(lid,i,f.id);return}
+      if(f.type==="yearonly"){
+        h+='<div class="field"><label>'+f.label+'</label><select onchange="updateItem(\''+lid+'\','+i+',\''+f.id+'\',this.value)"><option value="">—</option>'+YEARS.map(function(y){return'<option '+(it[f.id]===y?"selected":"")+'>'+y+'</option>'}).join("")+'</select></div>';
+        return;
+      }
+      if(f.type==="sportdate"){
+        var sv=it[f.id]||{};var ms=MONTHS[state.lang]||MONTHS.fr;
+        var l2=L();
+        var chronoErr=(sv.startYear&&sv.endYear&&!sv.endPresent&&parseInt(sv.startYear)>parseInt(sv.endYear));
+        var mOpts=ms.map(function(m,k){var v2=String(k+1).padStart(2,"0");return'<option value="'+v2+'" '+(sv.startMonth===v2?"selected":"")+'>'+m+'</option>'}).join("");
+        var yOpts=YEARS.map(function(y){return'<option '+(sv.startYear===y?"selected":"")+'>'+y+'</option>'}).join("");
+        var emOpts=ms.map(function(m,k){var v2=String(k+1).padStart(2,"0");return'<option value="'+v2+'" '+(sv.endMonth===v2?"selected":"")+'>'+m+'</option>'}).join("");
+        var eyOpts=YEARS.map(function(y){return'<option '+(sv.endYear===y?"selected":"")+'>'+y+'</option>'}).join("");
+        h+='<div class="field"><label>'+f.label+'</label>';
+        h+='<div style="font-size:10px;color:#bbb;font-style:italic;margin-bottom:4px">'+(l2.debut||"Début")+'</div>';
+        h+='<div style="display:flex;gap:6px;margin-bottom:8px">';
+        h+='<select style="flex:1;padding:11px 12px;border:1.5px solid #d8d8d0;border-radius:9px;font-family:inherit;font-size:14px;appearance:none;-webkit-appearance:none;background:#fff" onchange="updateSportDate(\''+lid+'\','+i+',\'startMonth\',this.value)"><option value="">'+(l2.mois||"Mois")+'</option>'+mOpts+'</select>';
+        h+='<select style="flex:0 0 84px;padding:11px 12px;border:1.5px solid #d8d8d0;border-radius:9px;font-family:inherit;font-size:14px;appearance:none;-webkit-appearance:none;background:#fff" onchange="updateSportDate(\''+lid+'\','+i+',\'startYear\',this.value)"><option value="">'+(l2.annee||"Année")+'</option>'+yOpts+'</select>';
+        h+='</div>';
+        if(!sv.endPresent){
+          h+='<div style="font-size:10px;color:#bbb;font-style:italic;margin-bottom:4px">'+(l2.fin||"Fin")+'</div>';
+          h+='<div style="display:flex;gap:6px">';
+          h+='<select style="flex:1;padding:11px 12px;border:1.5px solid #d8d8d0;border-radius:9px;font-family:inherit;font-size:14px;appearance:none;-webkit-appearance:none;background:#fff" onchange="updateSportDate(\''+lid+'\','+i+',\'endMonth\',this.value)"><option value="">'+(l2.mois||"Mois")+'</option>'+emOpts+'</select>';
+          h+='<select style="flex:0 0 84px;padding:11px 12px;border:1.5px solid #d8d8d0;border-radius:9px;font-family:inherit;font-size:14px;appearance:none;-webkit-appearance:none;background:#fff" onchange="updateSportDate(\''+lid+'\','+i+',\'endYear\',this.value)"><option value="">'+(l2.annee||"Année")+'</option>'+eyOpts+'</select>';
+          h+='</div>';
+        }
+        h+='<label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:#666;cursor:pointer"><input type="checkbox" '+(sv.endPresent?"checked":"")+' onchange="updateSportDate(\''+lid+'\','+i+',\'endPresent\',this.checked)">'+(l2.present||"Présent")+'</label>';
+        var sportStartErr=state.errors["sport_start_"+i];
+        var sportEndErr=state.errors["sport_end_"+i];
+        var sportChronoErr=state.errors["sport_chrono_"+i];
+        if(sportStartErr)h+='<div class="err" style="display:block;margin-top:4px">'+sportStartErr+'</div>';
+        if(sportEndErr)h+='<div class="err" style="display:block;margin-top:4px">'+sportEndErr+'</div>';
+        if(sportChronoErr)h+='<div class="err" style="display:block;margin-top:4px">'+sportChronoErr+'</div>';
+        h+='</div>';
+        return;
+      }
+      h+='<div class="field"><label>'+f.label+(f.req?" *":"")+'</label><input type="text" placeholder="'+(f.ph||"")+'" maxlength="'+(f.max||100)+'" value="'+(it[f.id]||"").replace(/"/g,"&quot;")+'" oninput="updateItem(\''+lid+'\','+i+',\''+f.id+'\',this.value)"></div>';
+    });
+    h+='</div>';
+  });
+  h+='<button class="add" onclick="addItem(\''+lid+'\')">'+l.addMore+'</button>';
+  return h;
+}
+function addItem(lid){var cur=L().steps[state.step];var lf=cur.listFields||[];if(lid==="languages"){state.data.languages=(state.data.languages||[]).concat([{name:"",level:""}]);render();return}var b={};lf.forEach(function(f){b[f.id]=""});state.data[lid]=(state.data[lid]||[]).concat([b]);render()}
+function removeItem(lid,i){var n=state.data[lid].slice();n.splice(i,1);state.data[lid]=n;render()}
+function updateItem(lid,i,fid,val){var n=state.data[lid].slice();n[i][fid]=val;state.data[lid]=n}
+function updateSportDate(lid,i,key,val){
+  var n=state.data[lid].slice();
+  var sv=n[i].period||{};
+  if(key==="endPresent"){sv.endPresent=val;if(val){sv.endMonth="";sv.endYear=""}}else{sv[key]=val}
+  n[i].period=sv;state.data[lid]=n;delete state.errors['sport_start_'+i];delete state.errors['sport_end_'+i];delete state.errors['sport_chrono_'+i];render();
+}
+
+function langBlock(){
+  var l=L();var items=state.data.languages||[];var h="";
+  items.forEach(function(it,i){
+    h+='<div class="li"><button class="rm" onclick="removeItem(\'languages\','+i+')">×</button>';
+    h+='<div class="field"><label>'+l.langue+'</label><input type="text" placeholder="Anglais / English" maxlength="40" value="'+(it.name||"").replace(/"/g,"&quot;")+'" oninput="updateItem(\'languages\','+i+',\'name\',this.value)"></div>';
+    h+='<div class="field"><label>'+l.niveau+' *</label>'+(state.errors["lang_level_"+i]?'<div class="err" style="margin-bottom:4px">'+l.err.langLevel+'</div>':"")+'<div style="display:flex;gap:6px;flex-wrap:wrap">';
+    l.levels.forEach(function(lv){h+='<div class="pill '+(it.level===lv?"sel":"")+'" onclick="setLevel('+i+',\''+lv+'\')">'+lv+'</div>'});
+    h+='</div></div></div>';
+  });
+  h+='<button class="add" onclick="addItem(\'languages\')">'+l.addMore+'</button>';
+  return h;
+}
+function setLevel(i,lv){var n=state.data.languages.slice();n[i].level=lv;state.data.languages=n;delete state.errors["lang_level_"+i];render()}
+
+function render(){
+  var l=L();document.body.className=state.lang==="ar"?"rtl":"";var app=document.getElementById("app");
+
+  if(state.generated){
+    var cvHTML=buildCV(state.data,state.photo,state.lang);
+    var scale=480/794;var scaledH=Math.round(1123*scale);
+    app.innerHTML=
+      '<div class="langbar">'+["fr","en","ar"].map(function(lc){return'<button class="langbtn '+(state.lang===lc?"active":"")+'" onclick="setLang(\''+lc+'\')">'+lc.toUpperCase()+'</button>'}).join("")+'</div>'+
+      '<div class="header"><div class="hlabel">✅ '+l.cvReady+'</div><h1>'+l.cvHere+'</h1></div>'+
+      '<div style="width:100%;max-width:480px;background:var(--accent-l);border-radius:10px;padding:12px 16px;font-size:13px;color:#444;margin-bottom:14px;line-height:1.6">'+l.genHint+'</div>'+
+      '<div class="dlbtns"><button class="dlbtn pdf" id="btn-pdf" onclick="downloadPDF()">'+l.dlPdf+'</button><button class="dlbtn png" id="btn-png" onclick="downloadPNG()">'+l.dlPng+'</button></div>'+
+      '<div class="cvframe" style="height:'+scaledH+'px"><div style="transform:scale('+scale+');transform-origin:top left;width:794px;height:1123px;pointer-events:none">'+cvHTML+'</div></div>'+
+      '<button class="restart" onclick="restart()">'+l.restart+'</button>';
+    return;
+  }
+
+  var total=l.steps.length;var pct=Math.round(((state.step+1)/total)*100);var cur=l.steps[state.step];var isLast=state.step===total-1;
+  var bodyHTML="";
+  if(cur.type==="list")bodyHTML=listBlock(cur.listId,cur.listFields);
+  else if(cur.type==="langlist")bodyHTML=langBlock();
+  else bodyHTML=cur.fields.map(field).join("");
+
+  app.innerHTML=
+    '<div class="langbar">'+["fr","en","ar"].map(function(lc){return'<button class="langbtn '+(state.lang===lc?"active":"")+'" onclick="setLang(\''+lc+'\')">'+lc.toUpperCase()+'</button>'}).join("")+'</div>'+
+    '<div class="header"><div class="hlabel">'+l.hdrLabel+'</div><h1>'+l.hdrTitle[0]+'<br>'+l.hdrTitle[1]+'</h1></div>'+
+    '<div class="progwrap"><div class="proginfo"><span>'+l.stepOf(state.step+1,total)+'</span><span>'+pct+'%</span></div><div class="progbar"><div class="progfill" style="width:'+pct+'%"></div></div></div>'+
+    '<div class="card"><div class="chead"><div class="icon">'+cur.icon+'</div><h2>'+cur.title+'</h2><p>'+cur.sub+'</p></div>'+
+    '<div class="body">'+bodyHTML+'</div>'+
+    '<div class="nav">'+(state.step>0?'<button class="bback" onclick="onBack()">'+l.back+'</button>':"")+
+    '<button class="bnext '+(isLast?"gen":"")+'" style="'+(state.step===0?"flex:3":"")+'" onclick="'+(isLast?"onGenerate()":"onNext()")+'">'+(isLast?"📄 "+l.generate:l.next)+'</button></div></div>';
+}
+
+function setLang(lc){state.lang=lc;render()}
+function restart(){state.generated=false;state.step=0;render()}
+
+render();
+</script>
+</body>
+</html>
